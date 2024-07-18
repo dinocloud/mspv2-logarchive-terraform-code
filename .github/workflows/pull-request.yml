@@ -1,0 +1,123 @@
+name: PR Scans
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TERRAFORM_DOCS_VERSION: v0.16.0
+  TFLINT_VERSION: v0.46.1
+
+jobs:
+  pre-commit:
+    name: Pre commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Find terraform version
+        id: maxVer
+        uses: clowdhaus/terraform-min-max@v1.2.4
+
+      - name: Pre-commit Terraform ${{ steps.maxVer.outputs.maxVersion }}
+        uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
+        with:
+          terraform-version: ${{ steps.maxVer.outputs.maxVersion }}
+          tflint-version: ${{ env.TFLINT_VERSION }}
+          terraform-docs-version: ${{ env.TERRAFORM_DOCS_VERSION }}
+          install-hcledit: true
+
+  security-scan:
+    name: Security checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Run kics Scan
+        uses: checkmarx/kics-github-action@v1.7.0
+        with:
+          path: '.'
+          ignore_on_exit: results
+          output_path: kicsScan/
+
+  plan:
+    name: Plan example complete on pull request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform min/max versions
+        id: maxVersion
+        uses: clowdhaus/terraform-min-max@v1.2.4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ steps.maxVersion.outputs.maxVersion }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.SANDBOX1_ROLE_ARN }}
+
+      - id: private-modules
+        uses: philips-labs/terraform-private-modules-action@v1
+        with:
+          org: dinocloud
+          token: ${{ secrets.TERRAFORM_INTERNAL_MODULES_TOKEN }}
+
+      - name: Terraform init
+        id: init
+        run: terraform -chdir=examples/complete init
+
+      - name: Terraform validate
+        id: validate
+        run: terraform -chdir=examples/complete validate -no-color
+
+      - name: Terraform plan
+        id: plan
+        run: terraform -chdir=examples/complete plan -input=false -no-color
+
+      - name: Update pull request
+        uses: actions/github-script@v6
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.TERRAFORM_INTERNAL_MODULES_TOKEN }}
+          script: |
+            const output = `### Terraform Plan Example Complete
+            #### Terraform initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
