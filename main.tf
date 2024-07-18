@@ -11,10 +11,3 @@ locals {
     Common_name = local.common_name
   }
 }
-
-module "" {
-  source  = ""
-  version = ""
-  name    = local.common_name
-  tags    = local.common_tags
-}
