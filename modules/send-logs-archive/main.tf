@@ -1,7 +1,13 @@
-provider "aws" {
-  region = "us-east-1"
-}
+terraform {
+  required_version = ">= 1.0.0"
 
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.20.1"
+    }
+  }
+}
 
 # Crear el bucket de S3
 resource "aws_s3_bucket" "backups_logs_archive" {
@@ -28,11 +34,11 @@ resource "aws_s3_bucket" "backups_logs_archive" {
     POLICY
 }
 
-    # Crear un rol de IAM con permisos para S3
+# Crear un rol de IAM con permisos para S3
 resource "aws_iam_role" "send_logs_to_achive_role" {
-    name = "send_logs_to_archive_role"
+  name = "send_logs_to_archive_role"
 
-    assume_role_policy = <<EOF
+  assume_role_policy = <<EOF
     {
         "Version": "2012-10-17",
         "Statement": [
@@ -50,10 +56,10 @@ resource "aws_iam_role" "send_logs_to_achive_role" {
 
 # Adjuntar políticas al rol de IAM
 resource "aws_iam_policy" "s3_policy" {
-    name        = "send_logs_to_achive_s3_policy"
-    description = "Política para permitir acceso a S3"
+  name        = "send_logs_to_achive_s3_policy"
+  description = "Política para permitir acceso a S3"
 
-    policy = <<POLICY
+  policy = <<POLICY
     {
         "Version": "2012-10-17",
         "Statement": [
@@ -77,9 +83,9 @@ resource "aws_iam_policy" "s3_policy" {
 
 # Vincular la política al rol
 resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
-    role       = aws_iam_role.send_logs_to_achive_role.name
-    policy_arn = aws_iam_policy.s3_policy.arn
-}   
+  role       = aws_iam_role.send_logs_to_achive_role.name
+  policy_arn = aws_iam_policy.s3_policy.arn
+}
 
 
 
