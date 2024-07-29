@@ -3,10 +3,10 @@
 #   type        = string
 #   description = "name of bucket_operation_name"
 # }
-# variable "name_role_lambda" {
-#   type        = string
-#   description = "name of lambda to send logs"
-# }
+variable "name_role_lambda" {
+  type        = string
+  description = "name of lambda to send logs"
+}
 # variable "account_id" {
 #   type        = string
 #   description = "account to create policy"

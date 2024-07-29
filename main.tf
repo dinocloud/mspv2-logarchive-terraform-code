@@ -1,8 +1,6 @@
 #Main
 module "send_logs_archive" {
-  source = "./modules/send-logs-archive"
-  #   bucket_operation_name = "backups-logs-operation2"
-  #   name_role_lambda      = "send_logs_to_archive-role"
-  ##   account_id            = "767398058472"
+  source              = "./modules/send-logs-archive"
+  name_role_lambda    = "send_logs_to_archive-role"
   bucket_archive_name = "backups-logs-archive2"
 }
