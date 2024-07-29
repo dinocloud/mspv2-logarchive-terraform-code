@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = ">= 4.20.1"
     }
+    template = {
+      source  = "hashicorp/template"
+      version = "2.2.0"
+    }
   }
 }
 
@@ -18,7 +22,7 @@ resource "aws_s3_bucket" "backups_logs_archive" {
 data "template_file" "backups_policy_logs_archive" {
   template = file("${path.module}/policies/bucket-policy.json")
   vars = {
-    name_role_lambda  = var.name_role_lambda
+    name_role_lambda    = var.name_role_lambda
     bucket_archive_name = var.bucket_archive_name
   }
 }
@@ -35,7 +39,7 @@ resource "aws_s3_bucket_policy" "backups_policy_logs_archive" {
 data "template_file" "send_logs_to_archive_role" {
   template = file("${path.module}/policies/send-logs-role.json")
   vars = {
-    name_role_lambda  = var.name_role_lambda
+    name_role_lambda    = var.name_role_lambda
     bucket_archive_name = var.bucket_archive_name
   }
 }
@@ -69,6 +73,3 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   role       = aws_iam_role.send_logs_to_archive_role.name
   policy_arn = aws_iam_policy.s3_policy.arn
 }
-
-
-
