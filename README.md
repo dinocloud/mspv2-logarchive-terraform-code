@@ -22,10 +22,6 @@ No providers.
 
 ## Modules
 
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_send_logs_archive"></a> [send\_logs\_archive](#module\_send\_logs\_archive) | ./modules/send-logs-archive | n/a |
-
 ## Resources
 
 No resources.
