@@ -22,8 +22,6 @@ No providers.
 
 ## Modules
 
-No modules.
-
 ## Resources
 
 No resources.
